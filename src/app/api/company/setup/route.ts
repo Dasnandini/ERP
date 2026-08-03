@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
 
     const data = parseResult.data;
 
-    // Execute single database setup via CompanyRepository
+    // Execute atomic single database transaction via CompanyRepository
     const company = await companyRepository.setupCompany(user.id, user.email, data as any);
 
     return NextResponse.json(
@@ -108,49 +108,27 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (err: unknown) {
+  } catch (err: any) {
     console.error("[company setup error]", err);
-    let errorMessage = "Failed to set up company. Please check your inputs and try again.";
+    let errorMessage = "Failed to set up company. Please verify your company details and try again.";
 
-    if (err instanceof Error) {
-      const fullErrorText = (
-        err.message +
-        " " +
-        String((err as any).cause?.message || "") +
-        " " +
-        String((err as any).detail || "")
-      ).toLowerCase();
+    const causeObj = err?.cause || err;
+    const constraint = String(causeObj?.constraint || err?.constraint || "").toLowerCase();
+    const detail = String(causeObj?.detail || err?.detail || "").toLowerCase();
+    const rawMsg = String(err?.message || "").toLowerCase();
 
-      if (
-        fullErrorText.includes("gst_number") ||
-        fullErrorText.includes("gst_number_key") ||
-        fullErrorText.includes("gst_number_unique")
-      ) {
-        errorMessage = "A company with this GST number is already registered.";
-      } else if (
-        fullErrorText.includes("pan") ||
-        fullErrorText.includes("pan_key") ||
-        fullErrorText.includes("pan_unique")
-      ) {
-        errorMessage = "A company with this PAN is already registered.";
-      } else if (
-        fullErrorText.includes("companies_email_unique") ||
-        fullErrorText.includes("companies_email_key")
-      ) {
-        errorMessage = "A company with this email address is already registered.";
-      } else if (
-        fullErrorText.includes("slug") ||
-        fullErrorText.includes("companies_slug_key")
-      ) {
-        errorMessage = "A company with a similar name already exists.";
-      } else if (
-        fullErrorText.includes("violates foreign key constraint") ||
-        fullErrorText.includes("foreign key")
-      ) {
-        errorMessage = "Invalid address or logo reference. Please try again.";
-      } else if (err.message && !err.message.startsWith("Failed query:")) {
-        errorMessage = err.message;
-      }
+    if (constraint.includes("gst_number") || detail.includes("key (gst_number)")) {
+      errorMessage = "A company with this GST number is already registered.";
+    } else if (constraint.includes("pan") || detail.includes("key (pan)")) {
+      errorMessage = "A company with this PAN is already registered.";
+    } else if (constraint.includes("companies_email") || detail.includes("key (email)")) {
+      errorMessage = "A company with this email address is already registered.";
+    } else if (constraint.includes("slug") || detail.includes("key (slug)")) {
+      errorMessage = "A company with a similar name already exists. Please try a different company name.";
+    } else if (rawMsg.includes("violates foreign key constraint") || detail.includes("foreign key")) {
+      errorMessage = "Invalid address or file reference. Please try again.";
+    } else if (err?.message && typeof err.message === "string" && !err.message.startsWith("Failed query:")) {
+      errorMessage = err.message;
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 400 });

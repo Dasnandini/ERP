@@ -8,7 +8,7 @@ import { departments } from "@/db/schema/hr/department";
 import { paymentMethods } from "@/db/schema/finance/payment-method";
 import { taxes } from "@/db/schema/finance/tax";
 import { fiscalYears } from "@/db/schema/finance/fiscal-year";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import crypto from "crypto";
 
 export interface CompanySetupInput {
@@ -80,9 +80,10 @@ export class CompanyRepository {
   }
 
   async setupCompany(userId: string, userEmail: string, data: CompanySetupInput) {
-    const runSetup = async (executor: any) => {
+    // Atomic Database Transaction: Any error during setup triggers full Postgres rollback
+    return await db.transaction(async (tx) => {
       // 1. Create Default Address
-      const [addressRecord] = await executor
+      const [addressRecord] = await tx
         .insert(addresses)
         .values({
           addressLine1: data.addressLine1,
@@ -98,7 +99,7 @@ export class CompanyRepository {
       // 2. Create Logo File Entry if logo provided
       let logoFileId: string | null = null;
       if (data.logoUrl) {
-        const [fileRecord] = await executor
+        const [fileRecord] = await tx
           .insert(files)
           .values({
             fileName: data.logoName || "company-logo.png",
@@ -112,16 +113,15 @@ export class CompanyRepository {
         logoFileId = fileRecord.id;
       }
 
-      // Prepare clean unique fields
-      const cleanGst = data.gstNumber?.trim() || null;
-      const cleanPan = data.pan?.trim() || null;
-      const cleanWebsite = data.website?.trim() || null;
-      const targetCompanyEmail = data.email?.trim() || userEmail || null;
-
+      // Prepare clean fields
+      const cleanGst = data.gstNumber && data.gstNumber.trim() !== "" ? data.gstNumber.trim() : null;
+      const cleanPan = data.pan && data.pan.trim() !== "" ? data.pan.trim() : null;
+      const cleanWebsite = data.website && data.website.trim() !== "" ? data.website.trim() : null;
+      const targetCompanyEmail = data.email && data.email.trim() !== "" ? data.email.trim() : userEmail || null;
 
       // 3. Create Company
       const companySlug = slugify(data.name);
-      const [companyRecord] = await executor
+      const [companyRecord] = await tx
         .insert(companies)
         .values({
           name: data.name,
@@ -143,133 +143,91 @@ export class CompanyRepository {
 
       const companyId = companyRecord.id;
 
-      // 4. Create or Get Owner Role safely
-      let ownerRole = (
-        await executor
-          .select({ id: roles.id })
-          .from(roles)
-          .where(and(eq(roles.companyId, companyId), eq(roles.name, "Owner")))
-          .limit(1)
-      )[0];
-
-      if (!ownerRole) {
-        const [insertedRole] = await executor
-          .insert(roles)
-          .values({
-            companyId: companyId,
-            name: "Owner",
-            description: "Company Owner with administrative access",
-            isSystem: true,
-            createdBy: userId,
-          })
-          .returning({ id: roles.id });
-        ownerRole = insertedRole;
-      }
-
-      // 5. Create Membership safely
-      const existingMembership = (
-        await executor
-          .select({ id: memberships.id })
-          .from(memberships)
-          .where(and(eq(memberships.companyId, companyId), eq(memberships.userId, userId)))
-          .limit(1)
-      )[0];
-
-      if (!existingMembership) {
-        await executor.insert(memberships).values({
+      // 4. Create Owner Role
+      const [ownerRole] = await tx
+        .insert(roles)
+        .values({
           companyId: companyId,
-          userId: userId,
-          roleId: ownerRole.id,
-          isDefaultCompany: true,
-          joinedAt: new Date(),
-        });
-      }
+          name: "Owner",
+          description: "Company Owner with administrative access",
+          isSystem: true,
+          createdBy: userId,
+        })
+        .returning({ id: roles.id });
+
+      // 5. Create Membership & Assign Owner Role
+      await tx.insert(memberships).values({
+        companyId: companyId,
+        userId: userId,
+        roleId: ownerRole.id,
+        isDefaultCompany: true,
+        joinedAt: new Date(),
+      });
 
       // 6. Create Default Departments
-      const defaultDepts = [
-        { name: "Administration", code: "ADM", description: "General Administration & Management", isDefault: true },
-        { name: "Human Resources", code: "HR", description: "Personnel & Recruitment", isDefault: false },
-        { name: "Finance", code: "FIN", description: "Accounting & Financial Ops", isDefault: false },
-        { name: "Sales & Marketing", code: "SAL", description: "Business Development & Sales", isDefault: false },
-        { name: "Operations", code: "OPS", description: "Core Business Operations", isDefault: false },
-      ];
-
-      for (const dept of defaultDepts) {
-        const existingDept = (
-          await executor
-            .select({ id: departments.id })
-            .from(departments)
-            .where(and(eq(departments.companyId, companyId), eq(departments.name, dept.name)))
-            .limit(1)
-        )[0];
-
-        if (!existingDept) {
-          await executor.insert(departments).values({
-            companyId: companyId,
-            name: dept.name,
-            code: dept.code,
-            description: dept.description,
-            isDefault: dept.isDefault,
-            status: "active",
-            createdBy: userId,
-          });
-        }
-      }
+      await tx.insert(departments).values([
+        {
+          companyId: companyId,
+          name: "Administration",
+          code: "ADM",
+          description: "General Administration & Management",
+          isDefault: true,
+          status: "active",
+          createdBy: userId,
+        },
+        {
+          companyId: companyId,
+          name: "Human Resources",
+          code: "HR",
+          description: "Personnel & Recruitment",
+          isDefault: false,
+          status: "active",
+          createdBy: userId,
+        },
+        {
+          companyId: companyId,
+          name: "Finance",
+          code: "FIN",
+          description: "Accounting & Financial Ops",
+          isDefault: false,
+          status: "active",
+          createdBy: userId,
+        },
+        {
+          companyId: companyId,
+          name: "Sales & Marketing",
+          code: "SAL",
+          description: "Business Development & Sales",
+          isDefault: false,
+          status: "active",
+          createdBy: userId,
+        },
+        {
+          companyId: companyId,
+          name: "Operations",
+          code: "OPS",
+          description: "Core Business Operations",
+          isDefault: false,
+          status: "active",
+          createdBy: userId,
+        },
+      ]);
 
       // 7. Create Default Payment Methods
-      const defaultMethods = [
-        { name: "Cash", isDefault: true },
-        { name: "Bank Transfer", isDefault: false },
-        { name: "Credit Card", isDefault: false },
-        { name: "UPI / Net Banking", isDefault: false },
-      ];
-
-      for (const pm of defaultMethods) {
-        const existingPm = (
-          await executor
-            .select({ id: paymentMethods.id })
-            .from(paymentMethods)
-            .where(and(eq(paymentMethods.companyId, companyId), eq(paymentMethods.name, pm.name)))
-            .limit(1)
-        )[0];
-
-        if (!existingPm) {
-          await executor.insert(paymentMethods).values({
-            companyId: companyId,
-            name: pm.name,
-            isDefault: pm.isDefault,
-            isActive: true,
-          });
-        }
-      }
+      await tx.insert(paymentMethods).values([
+        { companyId: companyId, name: "Cash", isDefault: true, isActive: true },
+        { companyId: companyId, name: "Bank Transfer", isDefault: false, isActive: true },
+        { companyId: companyId, name: "Credit Card", isDefault: false, isActive: true },
+        { companyId: companyId, name: "UPI / Net Banking", isDefault: false, isActive: true },
+      ]);
 
       // 8. Create Default Tax Settings
-      const defaultTaxes = [
-        { name: "GST 18%", percentage: "18.00", type: "GST", isDefault: true },
-        { name: "GST 12%", percentage: "12.00", type: "GST", isDefault: false },
-        { name: "GST 5%", percentage: "5.00", type: "GST", isDefault: false },
-        { name: "Exempt 0%", percentage: "0.00", type: "EXEMPT", isDefault: false },
-      ];
-
-      for (const taxItem of defaultTaxes) {
-        const existingTax = (
-          await executor
-            .select({ id: taxes.id })
-            .from(taxes)
-            .where(and(eq(taxes.companyId, companyId), eq(taxes.name, taxItem.name)))
-            .limit(1)
-        )[0];
-
-        if (!existingTax) {
-          await executor.insert(taxes).values({
-            companyId: companyId,
-            name: taxItem.name,
-            percentage: taxItem.percentage,
-            type: taxItem.type,
-            isDefault: taxItem.isDefault,
-          });
-        }
-      }
+      await tx.insert(taxes).values([
+        { companyId: companyId, name: "GST 18%", percentage: "18.00", type: "GST", isDefault: true },
+        { companyId: companyId, name: "GST 12%", percentage: "12.00", type: "GST", isDefault: false },
+        { companyId: companyId, name: "GST 5%", percentage: "5.00", type: "GST", isDefault: false },
+        { companyId: companyId, name: "Exempt 0%", percentage: "0.00", type: "EXEMPT", isDefault: false },
+      ]);
 
       // 9. Create Default Fiscal Year
       const currentYear = new Date().getFullYear();
@@ -277,40 +235,17 @@ export class CompanyRepository {
       const endDate = new Date(currentYear + 1, 2, 31);
       const fyName = `FY ${currentYear}-${currentYear + 1}`;
 
-      const existingFy = (
-        await executor
-          .select({ id: fiscalYears.id })
-          .from(fiscalYears)
-          .where(and(eq(fiscalYears.companyId, companyId), eq(fiscalYears.name, fyName)))
-          .limit(1)
-      )[0];
-
-      if (!existingFy) {
-        await executor.insert(fiscalYears).values({
-          companyId: companyId,
-          name: fyName,
-          startDate: startDate,
-          endDate: endDate,
-          isCurrent: true,
-          isClosed: false,
-        });
-      }
+      await tx.insert(fiscalYears).values({
+        companyId: companyId,
+        name: fyName,
+        startDate: startDate,
+        endDate: endDate,
+        isCurrent: true,
+        isClosed: false,
+      });
 
       return companyRecord;
-    };
-
-    try {
-      return await db.transaction(async (tx) => runSetup(tx));
-    } catch (err: any) {
-      if (
-        err?.message?.includes("No transactions support") ||
-        err?.message?.includes("driver") ||
-        err?.toString?.()?.includes("neon-http")
-      ) {
-        return await runSetup(db);
-      }
-      throw err;
-    }
+    });
   }
 }
 
