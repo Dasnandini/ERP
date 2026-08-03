@@ -53,6 +53,48 @@ export function verifySessionJwt(token: string): SessionPayload | null {
   }
 }
 
+export async function verifySessionJwtEdge(token: string): Promise<SessionPayload | null> {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+
+    const [headerB64, payloadB64, signatureB64] = parts;
+    const encoder = new TextEncoder();
+
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(JWT_SECRET),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    const signatureBin = Uint8Array.from(
+      atob(signatureB64.replace(/-/g, "+").replace(/_/g, "/")),
+      (c) => c.charCodeAt(0)
+    );
+
+    const data = encoder.encode(`${headerB64}.${payloadB64}`);
+    const isValid = await crypto.subtle.verify("HMAC", key, signatureBin, data);
+
+    if (!isValid) return null;
+
+    const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      return null;
+    }
+
+    if (!payload.userId || !payload.email) return null;
+
+    return { userId: payload.userId, email: payload.email };
+  } catch {
+    return null;
+  }
+}
+
+
 export function signEmailVerificationToken(email: string): string {
   return jwt.sign({ email, purpose: "email-verification" }, JWT_SECRET, {
     expiresIn: "24h",
