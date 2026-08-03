@@ -21,7 +21,7 @@ export const companies = pgTable("companies", {
   ...idColumn,
     name: text("name").notNull(),
 
-  email: varchar("email", { length: 255 }).unique(),
+  email: varchar("email", { length: 255 }),
 
   phone: varchar("phone", { length: 20 }).notNull(),
 
