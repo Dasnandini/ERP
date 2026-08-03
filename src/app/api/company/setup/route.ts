@@ -8,17 +8,39 @@ const setupCompanySchema = z.object({
   // Company Info
   name: z.string().min(2, "Company name must be at least 2 characters"),
   phone: z.string().min(5, "Phone number is required"),
-  website: z.string().url("Invalid URL format").or(z.literal("")).optional(),
-  industry: z.string().optional(),
-  email: z.string().email("Invalid company email").or(z.literal("")).optional(),
+  website: z
+    .string()
+    .url("Invalid URL format")
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
+  industry: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
+  email: z
+    .string()
+    .email("Invalid company email")
+    .or(z.literal(""))
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
 
   // Logo (optional URL or file payload)
-  logoUrl: z.string().optional(),
-  logoName: z.string().optional(),
+  logoUrl: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
+  logoName: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
 
   // Address Info
   addressLine1: z.string().min(3, "Address line 1 is required"),
-  addressLine2: z.string().optional(),
+  addressLine2: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
   city: z.string().min(2, "City is required"),
   state: z.string().min(2, "State is required"),
   country: z.string().min(2, "Country is required"),
@@ -31,12 +53,14 @@ const setupCompanySchema = z.object({
     .string()
     .length(15, "GST Number must be 15 characters")
     .or(z.literal(""))
-    .optional(),
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
   pan: z
     .string()
     .length(10, "PAN must be 10 characters")
     .or(z.literal(""))
-    .optional(),
+    .optional()
+    .transform((v) => (v && v.trim() !== "" ? v.trim() : null)),
 });
 
 export async function POST(request: NextRequest) {
@@ -73,8 +97,8 @@ export async function POST(request: NextRequest) {
 
     const data = parseResult.data;
 
-    // Execute single database transaction via CompanyRepository
-    const company = await companyRepository.setupCompany(user.id, user.email, data);
+    // Execute single database setup via CompanyRepository
+    const company = await companyRepository.setupCompany(user.id, user.email, data as any);
 
     return NextResponse.json(
       {
@@ -86,27 +110,49 @@ export async function POST(request: NextRequest) {
     );
   } catch (err: unknown) {
     console.error("[company setup error]", err);
-    let errorMessage = "Failed to set up company";
+    let errorMessage = "Failed to set up company. Please check your inputs and try again.";
 
     if (err instanceof Error) {
-      const msg = err.message.toLowerCase();
-      if (msg.includes("companies_email_unique") || msg.includes("companies_email_key")) {
-        errorMessage = "A company with this email address is already registered.";
-      } else if (msg.includes("companies_gst_number_unique") || msg.includes("companies_gst_number_key")) {
+      const fullErrorText = (
+        err.message +
+        " " +
+        String((err as any).cause?.message || "") +
+        " " +
+        String((err as any).detail || "")
+      ).toLowerCase();
+
+      if (
+        fullErrorText.includes("gst_number") ||
+        fullErrorText.includes("gst_number_key") ||
+        fullErrorText.includes("gst_number_unique")
+      ) {
         errorMessage = "A company with this GST number is already registered.";
-      } else if (msg.includes("companies_pan_unique") || msg.includes("companies_pan_key")) {
+      } else if (
+        fullErrorText.includes("pan") ||
+        fullErrorText.includes("pan_key") ||
+        fullErrorText.includes("pan_unique")
+      ) {
         errorMessage = "A company with this PAN is already registered.";
-      } else if (msg.includes("companies_slug_unique") || msg.includes("companies_slug_key")) {
+      } else if (
+        fullErrorText.includes("companies_email_unique") ||
+        fullErrorText.includes("companies_email_key")
+      ) {
+        errorMessage = "A company with this email address is already registered.";
+      } else if (
+        fullErrorText.includes("slug") ||
+        fullErrorText.includes("companies_slug_key")
+      ) {
         errorMessage = "A company with a similar name already exists.";
-      } else {
+      } else if (
+        fullErrorText.includes("violates foreign key constraint") ||
+        fullErrorText.includes("foreign key")
+      ) {
+        errorMessage = "Invalid address or logo reference. Please try again.";
+      } else if (err.message && !err.message.startsWith("Failed query:")) {
         errorMessage = err.message;
       }
     }
 
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 }
-
