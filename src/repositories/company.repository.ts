@@ -80,9 +80,9 @@ export class CompanyRepository {
   }
 
   async setupCompany(userId: string, userEmail: string, data: CompanySetupInput) {
-    return await db.transaction(async (tx) => {
+    const runSetup = async (executor: any) => {
       // 1. Create Default Address
-      const [addressRecord] = await tx
+      const [addressRecord] = await executor
         .insert(addresses)
         .values({
           addressLine1: data.addressLine1,
@@ -98,7 +98,7 @@ export class CompanyRepository {
       // 2. Create Logo File Entry if logo provided
       let logoFileId: string | null = null;
       if (data.logoUrl) {
-        const [fileRecord] = await tx
+        const [fileRecord] = await executor
           .insert(files)
           .values({
             fileName: data.logoName || "company-logo.png",
@@ -114,7 +114,7 @@ export class CompanyRepository {
 
       // 3. Create Company
       const companySlug = slugify(data.name);
-      const [companyRecord] = await tx
+      const [companyRecord] = await executor
         .insert(companies)
         .values({
           name: data.name,
@@ -136,7 +136,7 @@ export class CompanyRepository {
       const companyId = companyRecord.id;
 
       // 4. Create Owner Role
-      const [ownerRole] = await tx
+      const [ownerRole] = await executor
         .insert(roles)
         .values({
           companyId: companyId,
@@ -147,7 +147,7 @@ export class CompanyRepository {
         .returning({ id: roles.id });
 
       // 5. Create Membership & Assign Owner Role
-      await tx.insert(memberships).values({
+      await executor.insert(memberships).values({
         companyId: companyId,
         userId: userId,
         roleId: ownerRole.id,
@@ -156,7 +156,7 @@ export class CompanyRepository {
       });
 
       // 6. Create Default Departments
-      await tx.insert(departments).values([
+      await executor.insert(departments).values([
         {
           companyId: companyId,
           name: "Administration",
@@ -200,7 +200,7 @@ export class CompanyRepository {
       ]);
 
       // 7. Create Default Payment Methods
-      await tx.insert(paymentMethods).values([
+      await executor.insert(paymentMethods).values([
         { companyId: companyId, name: "Cash", isDefault: true, isActive: true },
         { companyId: companyId, name: "Bank Transfer", isDefault: false, isActive: true },
         { companyId: companyId, name: "Credit Card", isDefault: false, isActive: true },
@@ -208,7 +208,7 @@ export class CompanyRepository {
       ]);
 
       // 8. Create Default Tax Settings
-      await tx.insert(taxes).values([
+      await executor.insert(taxes).values([
         { companyId: companyId, name: "GST 18%", percentage: "18.00", type: "GST", isDefault: true },
         { companyId: companyId, name: "GST 12%", percentage: "12.00", type: "GST", isDefault: false },
         { companyId: companyId, name: "GST 5%", percentage: "5.00", type: "GST", isDefault: false },
@@ -220,7 +220,7 @@ export class CompanyRepository {
       const startDate = new Date(currentYear, 3, 1);
       const endDate = new Date(currentYear + 1, 2, 31);
 
-      await tx.insert(fiscalYears).values({
+      await executor.insert(fiscalYears).values({
         companyId: companyId,
         name: `FY ${currentYear}-${currentYear + 1}`,
         startDate: startDate,
@@ -230,7 +230,16 @@ export class CompanyRepository {
       });
 
       return companyRecord;
-    });
+    };
+
+    try {
+      return await db.transaction(async (tx) => runSetup(tx));
+    } catch (err: any) {
+      if (err?.message?.includes("No transactions support") || err?.message?.includes("driver") || err?.toString?.()?.includes("neon-http")) {
+        return await runSetup(db);
+      }
+      throw err;
+    }
   }
 }
 
