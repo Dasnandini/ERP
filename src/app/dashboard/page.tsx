@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-slate-400 text-sm">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-500 text-sm">
         Loading Dashboard…
       </div>
     );
@@ -37,30 +37,30 @@ export default function DashboardPage() {
   if (!user || !activeCompany) return null;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
+    <div className="min-h-screen bg-slate-50 text-slate-900 p-6 md:p-10">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Top Navbar */}
-        <div className="flex justify-between items-center bg-slate-900/80 border border-slate-800 rounded-2xl p-4 px-6 backdrop-blur-xl">
+        <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-2xl p-4 px-6 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-extrabold text-white shadow-md shadow-emerald-500/20">
               E
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-white tracking-tight">ERP SaaS</span>
-              <span className="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full font-medium">
+              <span className="text-xl font-bold text-slate-900 tracking-tight">ERP SaaS</span>
+              <span className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-0.5 rounded-full font-semibold">
                 {activeCompany.companyName}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-xs text-slate-400">
-              Role: <strong className="text-indigo-400 font-semibold">{activeCompany.roleName || "Owner"}</strong>
+            <span className="text-xs text-slate-500">
+              Role: <strong className="text-emerald-600 font-semibold">{activeCompany.roleName || "Owner"}</strong>
             </span>
             <button
               onClick={handleLogout}
               id="logout-btn"
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-all"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-all"
             >
               Logout
             </button>
@@ -68,40 +68,40 @@ export default function DashboardPage() {
         </div>
 
         {/* Welcome Header */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 md:p-8 space-y-6 shadow-xl shadow-emerald-950/5">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Welcome to {activeCompany.companyName}! 👋
               </h1>
-              <p className="text-sm text-slate-400 mt-1">
-                Logged in as <strong className="text-slate-200">{user.firstName} {user.lastName || ""}</strong> ({user.email})
+              <p className="text-sm text-slate-500 mt-1">
+                Logged in as <strong className="text-slate-800">{user.firstName} {user.lastName || ""}</strong> ({user.email})
               </p>
             </div>
-            <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+            <span className="px-3.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700">
               ✓ Setup Complete
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-            <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
-              <div className="text-xs text-slate-400 mb-1">Company Slug</div>
-              <div className="text-sm font-mono font-semibold text-slate-200">{activeCompany.companySlug}</div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+              <div className="text-xs text-slate-500 mb-1">Company Slug</div>
+              <div className="text-sm font-mono font-bold text-slate-800">{activeCompany.companySlug}</div>
             </div>
-            <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
-              <div className="text-xs text-slate-400 mb-1">Operating Currency</div>
-              <div className="text-sm font-semibold text-slate-200">{activeCompany.currency}</div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+              <div className="text-xs text-slate-500 mb-1">Operating Currency</div>
+              <div className="text-sm font-bold text-slate-800">{activeCompany.currency}</div>
             </div>
-            <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
-              <div className="text-xs text-slate-400 mb-1">Timezone</div>
-              <div className="text-sm font-semibold text-slate-200">{activeCompany.timezone}</div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+              <div className="text-xs text-slate-500 mb-1">Timezone</div>
+              <div className="text-sm font-bold text-slate-800">{activeCompany.timezone}</div>
             </div>
           </div>
         </div>
 
         {/* Multi-Company / Membership Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
-          <h2 className="text-base font-semibold text-white">
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 shadow-xl shadow-emerald-950/5">
+          <h2 className="text-base font-bold text-slate-900">
             Your Companies ({memberships.length})
           </h2>
           <div className="space-y-3">
@@ -110,18 +110,18 @@ export default function DashboardPage() {
                 key={m.companyId}
                 className={`flex justify-between items-center p-4 rounded-xl border transition-all ${
                   m.companyId === activeCompany.companyId
-                    ? "bg-indigo-950/30 border-indigo-500/40"
-                    : "bg-slate-950/60 border-slate-800/80"
+                    ? "bg-emerald-50/60 border-emerald-300"
+                    : "bg-slate-50/80 border-slate-200"
                 }`}
               >
                 <div>
-                  <div className="font-semibold text-sm text-slate-200">{m.companyName}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">
+                  <div className="font-bold text-sm text-slate-900">{m.companyName}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">
                     Phone: {m.companyPhone} • Role: {m.roleName || "Owner"}
                   </div>
                 </div>
                 {m.isDefaultCompany && (
-                  <span className="text-[11px] bg-indigo-600 text-white px-2.5 py-0.5 rounded-full font-semibold">
+                  <span className="text-[11px] bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-semibold">
                     Default Workspace
                   </span>
                 )}

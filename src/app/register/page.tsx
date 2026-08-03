@@ -27,10 +27,10 @@ function getPasswordStrength(pwd: string): { score: number; label: string; cls: 
   if (/[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-  if (score <= 1) return { score, label: "Weak", cls: "bg-red-500 text-red-400" };
-  if (score === 2) return { score, label: "Fair", cls: "bg-orange-500 text-orange-400" };
-  if (score === 3) return { score, label: "Good", cls: "bg-yellow-500 text-yellow-400" };
-  return { score, label: "Strong", cls: "bg-emerald-500 text-emerald-400" };
+  if (score <= 1) return { score, label: "Weak", cls: "bg-red-500 text-red-600" };
+  if (score === 2) return { score, label: "Fair", cls: "bg-amber-500 text-amber-600" };
+  if (score === 3) return { score, label: "Good", cls: "bg-yellow-500 text-yellow-600" };
+  return { score, label: "Strong", cls: "bg-emerald-500 text-emerald-600" };
 }
 
 export default function RegisterPage() {
@@ -84,27 +84,27 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(99,102,241,0.15),transparent)]">
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 shadow-2xl shadow-indigo-950/20 relative z-10">
-        {/* Brand */}
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.12),transparent)]">
+      <div className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl p-8 shadow-2xl shadow-emerald-950/5 relative z-10">
+        {/* Brand Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-extrabold text-white shadow-md shadow-emerald-500/20">
             E
           </div>
-          <span className="text-lg font-bold text-white tracking-tight">ERP SaaS</span>
+          <span className="text-xl font-bold text-slate-900 tracking-tight">ERP SaaS</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Create your account</h1>
-        <p className="text-sm text-slate-400 mb-6">Start your free trial today</p>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Create your account</h1>
+        <p className="text-sm text-slate-500 mb-6">Start your free trial today</p>
 
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2 mb-6">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-center gap-2 mb-6">
             <span>⚠</span><span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm text-emerald-400 flex items-center gap-2 mb-6">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 flex items-center gap-2 mb-6">
             <span>✓</span><span>{success} Redirecting to login…</span>
           </div>
         )}
@@ -114,11 +114,11 @@ export default function RegisterPage() {
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-slate-300" htmlFor="reg-firstname">First name</label>
+                <label className="text-xs font-semibold text-slate-700" htmlFor="reg-firstname">First name</label>
                 <input
                   id="reg-firstname"
                   type="text"
-                  className={`w-full px-3.5 py-2.5 bg-slate-950/80 border ${fieldErrors.firstName ? "border-red-500" : "border-slate-800"} rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
+                  className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.firstName ? "border-red-400" : "border-slate-200"} rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
                   placeholder="John"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
@@ -126,15 +126,15 @@ export default function RegisterPage() {
                   autoComplete="given-name"
                 />
                 {fieldErrors.firstName && (
-                  <span className="text-xs text-red-400 mt-0.5">{fieldErrors.firstName[0]}</span>
+                  <span className="text-xs text-red-500 mt-0.5">{fieldErrors.firstName[0]}</span>
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-slate-300" htmlFor="reg-lastname">Last name</label>
+                <label className="text-xs font-semibold text-slate-700" htmlFor="reg-lastname">Last name</label>
                 <input
                   id="reg-lastname"
                   type="text"
-                  className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="Doe"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
@@ -145,11 +145,11 @@ export default function RegisterPage() {
 
             {/* Email */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-300" htmlFor="reg-email">Email address</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="reg-email">Email address</label>
               <input
                 id="reg-email"
                 type="email"
-                className={`w-full px-3.5 py-2.5 bg-slate-950/80 border ${fieldErrors.email ? "border-red-500" : "border-slate-800"} rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
+                className={`w-full px-3.5 py-2.5 bg-slate-50 border ${fieldErrors.email ? "border-red-400" : "border-slate-200"} rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -157,30 +157,30 @@ export default function RegisterPage() {
                 autoComplete="email"
               />
               {fieldErrors.email && (
-                <span className="text-xs text-red-400 mt-0.5">{fieldErrors.email[0]}</span>
+                <span className="text-xs text-red-500 mt-0.5">{fieldErrors.email[0]}</span>
               )}
             </div>
 
             {/* Password */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-300" htmlFor="reg-password">Password</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="reg-password">Password</label>
               <div className="relative">
                 <input
                   id="reg-password"
                   type={showPwd ? "text" : "password"}
-                  className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-950/80 border ${fieldErrors.password ? "border-red-500" : "border-slate-800"} rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
+                  className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border ${fieldErrors.password ? "border-red-400" : "border-slate-200"} rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1" id="toggle-reg-password" onClick={() => setShowPwd((v) => !v)} aria-label="Toggle password">
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1" id="toggle-reg-password" onClick={() => setShowPwd((v) => !v)} aria-label="Toggle password">
                   <EyeIcon open={showPwd} />
                 </button>
               </div>
               {fieldErrors.password && (
-                <span className="text-xs text-red-400 mt-0.5">{fieldErrors.password[0]}</span>
+                <span className="text-xs text-red-500 mt-0.5">{fieldErrors.password[0]}</span>
               )}
               {password && strength && (
                 <div className="mt-1.5">
@@ -188,39 +188,39 @@ export default function RegisterPage() {
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${i <= strength.score ? strength.cls.split(' ')[0] : 'bg-slate-800'}`}
+                        className={`h-1 flex-1 rounded-full transition-colors ${i <= strength.score ? strength.cls.split(' ')[0] : 'bg-slate-200'}`}
                       />
                     ))}
                   </div>
-                  <span className={`text-[11px] font-medium ${strength.cls.split(' ')[1]}`}>{strength.label}</span>
+                  <span className={`text-[11px] font-semibold ${strength.cls.split(' ')[1]}`}>{strength.label}</span>
                 </div>
               )}
             </div>
 
             {/* Confirm Password */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-slate-300" htmlFor="reg-confirm-password">Confirm password</label>
+              <label className="text-xs font-semibold text-slate-700" htmlFor="reg-confirm-password">Confirm password</label>
               <div className="relative">
                 <input
                   id="reg-confirm-password"
                   type={showConfirm ? "text" : "password"}
-                  className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-950/80 border ${confirmPassword && confirmPassword !== password ? "border-red-500" : "border-slate-800"} rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
+                  className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border ${confirmPassword && confirmPassword !== password ? "border-red-400" : "border-slate-200"} rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   autoComplete="new-password"
                 />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1" id="toggle-confirm-password" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirm password">
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1" id="toggle-confirm-password" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirm password">
                   <EyeIcon open={showConfirm} />
                 </button>
               </div>
               {confirmPassword && confirmPassword !== password && (
-                <span className="text-xs text-red-400 mt-0.5">Passwords do not match</span>
+                <span className="text-xs text-red-500 mt-0.5">Passwords do not match</span>
               )}
             </div>
 
-            <button type="submit" className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2" id="register-submit" disabled={loading}>
+            <button type="submit" className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-2" id="register-submit" disabled={loading}>
               {loading && (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
@@ -229,9 +229,9 @@ export default function RegisterPage() {
           </form>
         )}
 
-        <p className="text-center text-xs text-slate-400 mt-6">
+        <p className="text-center text-xs text-slate-500 mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">Sign in</Link>
+          <Link href="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">Sign in</Link>
         </p>
       </div>
     </div>

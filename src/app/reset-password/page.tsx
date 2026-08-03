@@ -34,10 +34,10 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2">
+      <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-center gap-2">
         <span>⚠</span>
         <span>Invalid or missing reset token. Please{" "}
-          <Link href="/forgot-password" className="text-indigo-400 hover:text-indigo-300 font-medium">request a new one</Link>.
+          <Link href="/forgot-password" className="text-emerald-600 hover:text-emerald-700 font-semibold">request a new one</Link>.
         </span>
       </div>
     );
@@ -73,62 +73,62 @@ function ResetPasswordForm() {
   return (
     <>
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 flex items-center gap-2 mb-6">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 flex items-center gap-2 mb-6">
           <span>⚠</span><span>{error}</span>
         </div>
       )}
 
       {success ? (
-        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-sm text-emerald-400 flex items-center gap-2 mb-6">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 flex items-center gap-2 mb-6">
           <span>✓</span><span>{success} Redirecting to login…</span>
         </div>
       ) : (
         <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-300" htmlFor="reset-password">New password</label>
+            <label className="text-xs font-semibold text-slate-700" htmlFor="reset-password">New password</label>
             <div className="relative">
               <input
                 id="reset-password"
                 type={showPwd ? "text" : "password"}
-                className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="new-password"
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1" id="toggle-reset-password" onClick={() => setShowPwd((v) => !v)} aria-label="Toggle password">
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1" id="toggle-reset-password" onClick={() => setShowPwd((v) => !v)} aria-label="Toggle password">
                 <EyeIcon open={showPwd} />
               </button>
             </div>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-slate-500">
               Min 8 chars · uppercase · lowercase · number
             </span>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-slate-300" htmlFor="reset-confirm">Confirm new password</label>
+            <label className="text-xs font-semibold text-slate-700" htmlFor="reset-confirm">Confirm new password</label>
             <div className="relative">
               <input
                 id="reset-confirm"
                 type={showConfirm ? "text" : "password"}
-                className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-950/80 border ${confirmPassword && confirmPassword !== password ? "border-red-500" : "border-slate-800"} rounded-xl text-slate-100 text-sm placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all`}
+                className={`w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border ${confirmPassword && confirmPassword !== password ? "border-red-400" : "border-slate-200"} rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all`}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 autoComplete="new-password"
               />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors p-1" id="toggle-reset-confirm" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirm password">
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1" id="toggle-reset-confirm" onClick={() => setShowConfirm((v) => !v)} aria-label="Toggle confirm password">
                 <EyeIcon open={showConfirm} />
               </button>
             </div>
             {confirmPassword && confirmPassword !== password && (
-              <span className="text-xs text-red-400 mt-0.5">Passwords do not match</span>
+              <span className="text-xs text-red-500 mt-0.5">Passwords do not match</span>
             )}
           </div>
 
-          <button type="submit" className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/25 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-2" id="reset-submit" disabled={loading}>
+          <button type="submit" className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 mt-2" id="reset-submit" disabled={loading}>
             {loading && (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             )}
@@ -142,24 +142,24 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(99,102,241,0.15),transparent)]">
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 backdrop-blur-xl rounded-2xl p-8 shadow-2xl shadow-indigo-950/20 relative z-10">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(16,185,129,0.12),transparent)]">
+      <div className="w-full max-w-md bg-white border border-slate-200/80 rounded-2xl p-8 shadow-2xl shadow-emerald-950/5 relative z-10">
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center font-extrabold text-white shadow-md shadow-emerald-500/20">
             E
           </div>
-          <span className="text-lg font-bold text-white tracking-tight">ERP SaaS</span>
+          <span className="text-xl font-bold text-slate-900 tracking-tight">ERP SaaS</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white tracking-tight mb-1">Reset your password</h1>
-        <p className="text-sm text-slate-400 mb-6">Enter and confirm your new password below.</p>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Reset your password</h1>
+        <p className="text-sm text-slate-500 mb-6">Enter and confirm your new password below.</p>
 
-        <Suspense fallback={<div className="text-slate-400 text-sm">Loading…</div>}>
+        <Suspense fallback={<div className="text-slate-500 text-sm">Loading…</div>}>
           <ResetPasswordForm />
         </Suspense>
 
-        <p className="text-center text-xs text-slate-400 mt-6">
-          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">← Back to login</Link>
+        <p className="text-center text-xs text-slate-500 mt-6">
+          <Link href="/login" className="text-emerald-600 hover:text-emerald-700 font-semibold">← Back to login</Link>
         </p>
       </div>
     </div>

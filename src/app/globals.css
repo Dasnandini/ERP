@@ -2,6 +2,6 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white;
+    @apply bg-slate-50 text-slate-900 font-sans antialiased selection:bg-emerald-500 selection:text-white;
   }
 }
