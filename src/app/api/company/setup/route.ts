@@ -86,10 +86,27 @@ export async function POST(request: NextRequest) {
     );
   } catch (err: unknown) {
     console.error("[company setup error]", err);
-    const errorMessage = err instanceof Error ? err.message : "Failed to set up company";
+    let errorMessage = "Failed to set up company";
+
+    if (err instanceof Error) {
+      const msg = err.message.toLowerCase();
+      if (msg.includes("companies_email_unique") || msg.includes("companies_email_key")) {
+        errorMessage = "A company with this email address is already registered.";
+      } else if (msg.includes("companies_gst_number_unique") || msg.includes("companies_gst_number_key")) {
+        errorMessage = "A company with this GST number is already registered.";
+      } else if (msg.includes("companies_pan_unique") || msg.includes("companies_pan_key")) {
+        errorMessage = "A company with this PAN is already registered.";
+      } else if (msg.includes("companies_slug_unique") || msg.includes("companies_slug_key")) {
+        errorMessage = "A company with a similar name already exists.";
+      } else {
+        errorMessage = err.message;
+      }
+    }
+
     return NextResponse.json(
       { error: errorMessage },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
+

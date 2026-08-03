@@ -112,6 +112,26 @@ export class CompanyRepository {
         logoFileId = fileRecord.id;
       }
 
+      // Prepare clean unique fields
+      const cleanGst = data.gstNumber?.trim() || null;
+      const cleanPan = data.pan?.trim() || null;
+      const cleanWebsite = data.website?.trim() || null;
+      const cleanEmail = data.email?.trim() || null;
+
+      let targetCompanyEmail: string | null = cleanEmail;
+      if (!targetCompanyEmail && userEmail) {
+        const existingCompanyWithEmail = (
+          await executor
+            .select({ id: companies.id })
+            .from(companies)
+            .where(eq(companies.email, userEmail))
+            .limit(1)
+        )[0];
+        if (!existingCompanyWithEmail) {
+          targetCompanyEmail = userEmail;
+        }
+      }
+
       // 3. Create Company
       const companySlug = slugify(data.name);
       const [companyRecord] = await executor
@@ -119,10 +139,10 @@ export class CompanyRepository {
         .values({
           name: data.name,
           phone: data.phone,
-          email: data.email || userEmail,
-          gstNumber: data.gstNumber || null,
-          pan: data.pan || null,
-          website: data.website || null,
+          email: targetCompanyEmail,
+          gstNumber: cleanGst,
+          pan: cleanPan,
+          website: cleanWebsite,
           industry: data.industry || null,
           currency: data.currency || "INR",
           timezone: data.timezone || "Asia/Kolkata",
