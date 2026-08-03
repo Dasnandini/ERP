@@ -8,7 +8,7 @@ import { departments } from "@/db/schema/hr/department";
 import { paymentMethods } from "@/db/schema/finance/payment-method";
 import { taxes } from "@/db/schema/finance/tax";
 import { fiscalYears } from "@/db/schema/finance/fiscal-year";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import crypto from "crypto";
 
 export interface CompanySetupInput {
@@ -130,104 +130,164 @@ export class CompanyRepository {
           status: "active",
           addressId: addressRecord.id,
           logoFileId: logoFileId,
+          createdBy: userId,
         })
         .returning({ id: companies.id, name: companies.name, slug: companies.slug });
 
       const companyId = companyRecord.id;
 
-      // 4. Create Owner Role
-      const [ownerRole] = await executor
-        .insert(roles)
-        .values({
-          companyId: companyId,
-          name: "Owner",
-          description: "Company Owner with administrative access",
-          isSystem: true,
-        })
-        .returning({ id: roles.id });
+      // 4. Create or Get Owner Role safely
+      let ownerRole = (
+        await executor
+          .select({ id: roles.id })
+          .from(roles)
+          .where(and(eq(roles.companyId, companyId), eq(roles.name, "Owner")))
+          .limit(1)
+      )[0];
 
-      // 5. Create Membership & Assign Owner Role
-      await executor.insert(memberships).values({
-        companyId: companyId,
-        userId: userId,
-        roleId: ownerRole.id,
-        isDefaultCompany: true,
-        joinedAt: new Date(),
-      });
+      if (!ownerRole) {
+        const [insertedRole] = await executor
+          .insert(roles)
+          .values({
+            companyId: companyId,
+            name: "Owner",
+            description: "Company Owner with administrative access",
+            isSystem: true,
+            createdBy: userId,
+          })
+          .returning({ id: roles.id });
+        ownerRole = insertedRole;
+      }
+
+      // 5. Create Membership safely
+      const existingMembership = (
+        await executor
+          .select({ id: memberships.id })
+          .from(memberships)
+          .where(and(eq(memberships.companyId, companyId), eq(memberships.userId, userId)))
+          .limit(1)
+      )[0];
+
+      if (!existingMembership) {
+        await executor.insert(memberships).values({
+          companyId: companyId,
+          userId: userId,
+          roleId: ownerRole.id,
+          isDefaultCompany: true,
+          joinedAt: new Date(),
+        });
+      }
 
       // 6. Create Default Departments
-      await executor.insert(departments).values([
-        {
-          companyId: companyId,
-          name: "Administration",
-          code: "ADM",
-          description: "General Administration & Management",
-          isDefault: true,
-          status: "active",
-        },
-        {
-          companyId: companyId,
-          name: "Human Resources",
-          code: "HR",
-          description: "Personnel & Recruitment",
-          isDefault: false,
-          status: "active",
-        },
-        {
-          companyId: companyId,
-          name: "Finance",
-          code: "FIN",
-          description: "Accounting & Financial Ops",
-          isDefault: false,
-          status: "active",
-        },
-        {
-          companyId: companyId,
-          name: "Sales & Marketing",
-          code: "SAL",
-          description: "Business Development & Sales",
-          isDefault: false,
-          status: "active",
-        },
-        {
-          companyId: companyId,
-          name: "Operations",
-          code: "OPS",
-          description: "Core Business Operations",
-          isDefault: false,
-          status: "active",
-        },
-      ]);
+      const defaultDepts = [
+        { name: "Administration", code: "ADM", description: "General Administration & Management", isDefault: true },
+        { name: "Human Resources", code: "HR", description: "Personnel & Recruitment", isDefault: false },
+        { name: "Finance", code: "FIN", description: "Accounting & Financial Ops", isDefault: false },
+        { name: "Sales & Marketing", code: "SAL", description: "Business Development & Sales", isDefault: false },
+        { name: "Operations", code: "OPS", description: "Core Business Operations", isDefault: false },
+      ];
+
+      for (const dept of defaultDepts) {
+        const existingDept = (
+          await executor
+            .select({ id: departments.id })
+            .from(departments)
+            .where(and(eq(departments.companyId, companyId), eq(departments.name, dept.name)))
+            .limit(1)
+        )[0];
+
+        if (!existingDept) {
+          await executor.insert(departments).values({
+            companyId: companyId,
+            name: dept.name,
+            code: dept.code,
+            description: dept.description,
+            isDefault: dept.isDefault,
+            status: "active",
+            createdBy: userId,
+          });
+        }
+      }
 
       // 7. Create Default Payment Methods
-      await executor.insert(paymentMethods).values([
-        { companyId: companyId, name: "Cash", isDefault: true, isActive: true },
-        { companyId: companyId, name: "Bank Transfer", isDefault: false, isActive: true },
-        { companyId: companyId, name: "Credit Card", isDefault: false, isActive: true },
-        { companyId: companyId, name: "UPI / Net Banking", isDefault: false, isActive: true },
-      ]);
+      const defaultMethods = [
+        { name: "Cash", isDefault: true },
+        { name: "Bank Transfer", isDefault: false },
+        { name: "Credit Card", isDefault: false },
+        { name: "UPI / Net Banking", isDefault: false },
+      ];
+
+      for (const pm of defaultMethods) {
+        const existingPm = (
+          await executor
+            .select({ id: paymentMethods.id })
+            .from(paymentMethods)
+            .where(and(eq(paymentMethods.companyId, companyId), eq(paymentMethods.name, pm.name)))
+            .limit(1)
+        )[0];
+
+        if (!existingPm) {
+          await executor.insert(paymentMethods).values({
+            companyId: companyId,
+            name: pm.name,
+            isDefault: pm.isDefault,
+            isActive: true,
+          });
+        }
+      }
 
       // 8. Create Default Tax Settings
-      await executor.insert(taxes).values([
-        { companyId: companyId, name: "GST 18%", percentage: "18.00", type: "GST", isDefault: true },
-        { companyId: companyId, name: "GST 12%", percentage: "12.00", type: "GST", isDefault: false },
-        { companyId: companyId, name: "GST 5%", percentage: "5.00", type: "GST", isDefault: false },
-        { companyId: companyId, name: "Exempt 0%", percentage: "0.00", type: "EXEMPT", isDefault: false },
-      ]);
+      const defaultTaxes = [
+        { name: "GST 18%", percentage: "18.00", type: "GST", isDefault: true },
+        { name: "GST 12%", percentage: "12.00", type: "GST", isDefault: false },
+        { name: "GST 5%", percentage: "5.00", type: "GST", isDefault: false },
+        { name: "Exempt 0%", percentage: "0.00", type: "EXEMPT", isDefault: false },
+      ];
+
+      for (const taxItem of defaultTaxes) {
+        const existingTax = (
+          await executor
+            .select({ id: taxes.id })
+            .from(taxes)
+            .where(and(eq(taxes.companyId, companyId), eq(taxes.name, taxItem.name)))
+            .limit(1)
+        )[0];
+
+        if (!existingTax) {
+          await executor.insert(taxes).values({
+            companyId: companyId,
+            name: taxItem.name,
+            percentage: taxItem.percentage,
+            type: taxItem.type,
+            isDefault: taxItem.isDefault,
+          });
+        }
+      }
 
       // 9. Create Default Fiscal Year
       const currentYear = new Date().getFullYear();
       const startDate = new Date(currentYear, 3, 1);
       const endDate = new Date(currentYear + 1, 2, 31);
+      const fyName = `FY ${currentYear}-${currentYear + 1}`;
 
-      await executor.insert(fiscalYears).values({
-        companyId: companyId,
-        name: `FY ${currentYear}-${currentYear + 1}`,
-        startDate: startDate,
-        endDate: endDate,
-        isCurrent: true,
-        isClosed: false,
-      });
+      const existingFy = (
+        await executor
+          .select({ id: fiscalYears.id })
+          .from(fiscalYears)
+          .where(and(eq(fiscalYears.companyId, companyId), eq(fiscalYears.name, fyName)))
+          .limit(1)
+      )[0];
+
+      if (!existingFy) {
+        await executor.insert(fiscalYears).values({
+          companyId: companyId,
+          name: fyName,
+          startDate: startDate,
+          endDate: endDate,
+          isCurrent: true,
+          isClosed: false,
+        });
+      }
 
       return companyRecord;
     };
@@ -235,7 +295,11 @@ export class CompanyRepository {
     try {
       return await db.transaction(async (tx) => runSetup(tx));
     } catch (err: any) {
-      if (err?.message?.includes("No transactions support") || err?.message?.includes("driver") || err?.toString?.()?.includes("neon-http")) {
+      if (
+        err?.message?.includes("No transactions support") ||
+        err?.message?.includes("driver") ||
+        err?.toString?.()?.includes("neon-http")
+      ) {
         return await runSetup(db);
       }
       throw err;
