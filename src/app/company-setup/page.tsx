@@ -45,6 +45,7 @@ export default function CompanySetupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [logoError, setLogoError] = useState(false);
 
   // Form State
   const [name, setName] = useState("");
@@ -142,9 +143,22 @@ export default function CompanySetupPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!validateStep(4)) return;
+  async function handleFinalSubmit() {
+    // Only allow API submission if user is on step 4
+    if (currentStep !== 4) return;
+
+    if (!validateStep(1)) {
+      setCurrentStep(1);
+      return;
+    }
+    if (!validateStep(3)) {
+      setCurrentStep(3);
+      return;
+    }
+    if (!validateStep(4)) {
+      setCurrentStep(4);
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -186,6 +200,15 @@ export default function CompanySetupPage() {
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setSubmitting(false);
+    }
+  }
+
+  function handleFormSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (currentStep < 4) {
+      handleNext();
+    } else {
+      handleFinalSubmit();
     }
   }
 
@@ -269,7 +292,7 @@ export default function CompanySetupPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        <form onSubmit={handleFormSubmit} noValidate className="flex flex-col gap-5">
           {/* STEP 1: Company Profile */}
           {currentStep === 1 && (
             <div className="flex flex-col gap-4">
@@ -369,7 +392,10 @@ export default function CompanySetupPage() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                   placeholder="https://example.com/logo.png"
                   value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
+                  onChange={(e) => {
+                    setLogoUrl(e.target.value);
+                    setLogoError(false);
+                  }}
                 />
                 <span className="text-xs text-slate-500">
                   Provide an image link for your company logo or leave blank for default avatar.
@@ -378,13 +404,13 @@ export default function CompanySetupPage() {
 
               {/* Logo Preview */}
               <div className="bg-slate-50/70 border border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center gap-3">
-                {logoUrl ? (
+                {logoUrl && !logoError ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={logoUrl}
                     alt="Logo Preview"
                     className="max-h-16 max-w-[200px] object-contain rounded-lg"
-                    onError={() => setError("Failed to load image preview from provided URL.")}
+                    onError={() => setLogoError(true)}
                   />
                 ) : (
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-xl font-extrabold text-white shadow-md shadow-emerald-500/20">
@@ -392,7 +418,11 @@ export default function CompanySetupPage() {
                   </div>
                 )}
                 <span className="text-xs text-slate-500">
-                  {logoUrl ? "Logo Preview" : "Generated Avatar Preview"}
+                  {logoError
+                    ? "Unable to load logo image preview from URL"
+                    : logoUrl
+                    ? "Logo Preview"
+                    : "Generated Avatar Preview"}
                 </span>
               </div>
             </div>
@@ -587,6 +617,7 @@ export default function CompanySetupPage() {
 
             {currentStep < 4 ? (
               <button
+                key="btn-continue"
                 type="button"
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.99]"
                 onClick={handleNext}
@@ -595,10 +626,12 @@ export default function CompanySetupPage() {
               </button>
             ) : (
               <button
-                type="submit"
+                key="btn-create-company"
+                type="button"
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-emerald-600/20 active:scale-[0.99] disabled:opacity-50 flex items-center gap-2"
                 id="create-company-submit"
                 disabled={submitting}
+                onClick={handleFinalSubmit}
               >
                 {submitting && (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

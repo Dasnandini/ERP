@@ -85,6 +85,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Check if user already has a company setup
+    const existingMemberships = await companyRepository.findMembershipsByUserId(user.id);
+    if (existingMemberships && existingMemberships.length > 0) {
+      return NextResponse.json(
+        { error: "You already have an active company setup.", redirectTo: "/dashboard" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const parseResult = setupCompanySchema.safeParse(body);
 
@@ -117,18 +126,45 @@ export async function POST(request: NextRequest) {
     const detail = String(causeObj?.detail || err?.detail || "").toLowerCase();
     const rawMsg = String(err?.message || "").toLowerCase();
 
-    if (constraint.includes("gst_number") || detail.includes("key (gst_number)")) {
+    const isUniqueViolation =
+      rawMsg.includes("unique constraint") ||
+      rawMsg.includes("duplicate key") ||
+      causeObj?.code === "23505";
+
+    if (
+      constraint.includes("gst_number") ||
+      detail.includes("gst_number") ||
+      (isUniqueViolation && rawMsg.includes("gst_number"))
+    ) {
       errorMessage = "A company with this GST number is already registered.";
-    } else if (constraint.includes("pan") || detail.includes("key (pan)")) {
+    } else if (
+      constraint.includes("pan") ||
+      detail.includes("pan") ||
+      (isUniqueViolation && rawMsg.includes("pan"))
+    ) {
       errorMessage = "A company with this PAN is already registered.";
-    } else if (constraint.includes("companies_email") || detail.includes("key (email)")) {
+    } else if (
+      constraint.includes("companies_email") ||
+      detail.includes("companies_email") ||
+      detail.includes("key (email)") ||
+      (isUniqueViolation && rawMsg.includes("email"))
+    ) {
       errorMessage = "A company with this email address is already registered.";
-    } else if (constraint.includes("slug") || detail.includes("key (slug)")) {
+    } else if (
+      constraint.includes("slug") ||
+      detail.includes("slug") ||
+      (isUniqueViolation && rawMsg.includes("slug"))
+    ) {
       errorMessage = "A company with a similar name already exists. Please try a different company name.";
-    } else if (rawMsg.includes("violates foreign key constraint") || detail.includes("foreign key")) {
+    } else if (
+      rawMsg.includes("foreign key") ||
+      detail.includes("foreign key") ||
+      constraint.includes("foreign key")
+    ) {
       errorMessage = "Invalid address or file reference. Please try again.";
-    } else if (err?.message && typeof err.message === "string" && !err.message.startsWith("Failed query:")) {
-      errorMessage = err.message;
+    } else if (err?.message) {
+      const cleanMsg = String(err.message).replace(/^Failed query:\s*.*?-\s*/, "");
+      errorMessage = cleanMsg || String(err.message);
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 400 });
