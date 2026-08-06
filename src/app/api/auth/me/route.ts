@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifySessionJwt, AUTH_COOKIE_NAME } from "@/lib/auth";
-import { userRepository, companyRepository } from "@/repositories";
 import { cookies } from "next/headers";
+import { companyRepository, userRepository } from "@/repositories";
 
 export async function GET() {
   try {

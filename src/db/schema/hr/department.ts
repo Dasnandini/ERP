@@ -13,7 +13,7 @@ import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm/_relations";
 import { companies } from "../core/company";
 import { users } from "../core/user";
-import { activeColumn, auditColumns, idColumn, timestamps } from "../common/base-columns";
+import { activeColumn, auditColumns, idColumn, softDelete, timestamps } from "../common/base-columns";
 import { employees } from "./employee";
 
 export const departmentStatusEnum = pgEnum("department_status", [
@@ -40,9 +40,11 @@ export const departments = pgTable(
     status: departmentStatusEnum("status").default("active").notNull(),
 
     ...timestamps,
+    ...softDelete,
     ...activeColumn,
     ...auditColumns,
   },
+
   (table) => ({
     companyIdx: index("departments_company_id_idx").on(table.companyId),
     companyNameUniqueIdx: uniqueIndex("departments_company_name_unique_idx").on(

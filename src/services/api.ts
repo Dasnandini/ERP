@@ -123,3 +123,61 @@ export const companyApi = {
       body: JSON.stringify(companyData),
     }),
 };
+
+export const departmentApi = {
+  getPaginated: (params: {
+    search?: string;
+    status?: string;
+    deletedState?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params.search) query.set("search", params.search);
+    if (params.status) query.set("status", params.status);
+    if (params.deletedState) query.set("deletedState", params.deletedState);
+    if (params.page) query.set("page", params.page.toString());
+    if (params.limit) query.set("limit", params.limit.toString());
+    return request(`/api/departments?${query.toString()}`, { method: "GET" });
+  },
+
+  getById: (id: string) => request(`/api/departments/${id}`, { method: "GET" }),
+
+  create: (payload: {
+    name: string;
+    code?: string | null;
+    description?: string | null;
+    managerId?: string | null;
+    status?: "active" | "inactive";
+  }) =>
+    request("/api/departments", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  update: (
+    id: string,
+    payload: {
+      name?: string;
+      code?: string | null;
+      description?: string | null;
+      managerId?: string | null;
+      status?: "active" | "inactive";
+    }
+  ) =>
+    request(`/api/departments/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  softDelete: (id: string) =>
+    request(`/api/departments/${id}`, { method: "DELETE" }),
+
+  restore: (id: string) =>
+    request(`/api/departments/${id}/restore`, { method: "POST" }),
+
+  getManagers: () => request("/api/departments/managers", { method: "GET" }),
+
+  getLogs: () => request("/api/departments/logs", { method: "GET" }),
+};
+
